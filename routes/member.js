@@ -120,8 +120,9 @@ router.post('/editmemberinfo', function(req, res) {
         if(err) console.log('select error');
         else{
             if(row[0].member_type == 1){
-                con.query(`UPDATE member SET nickname = '${edit_nickname}',  weight = ${edit_weight}, wakeup_time = '${edit_wakeup_time}', bed_time = '${edit_bed_time}',intake_goal = ${edit_intake_goal}, 'temperature' = ${edit_temperature},
-                cycle = ${edit_cycle}, intake_once = ${edit_intake_once}  WHERE id = ${member_id};`, (err) =>{
+                console.log(edit_nickname, edit_weight, edit_wakeup_time, edit_bed_time, edit_intake_goal, edit_temperature, edit_cycle, edit_intake_once);
+                con.query(`UPDATE member SET nickname = '${edit_nickname}',  weight = ${edit_weight}, wakeup_time = '${edit_wakeup_time}', bed_time = '${edit_bed_time}',intake_goal = ${edit_intake_goal}, temperature = ${edit_temperature},
+                cycle = ${edit_cycle}, intake_once = '${edit_intake_once}'  WHERE id = ${member_id};`, (err) =>{
                     if(err) res.json({success: false, msg: 'person edit insert error'});
                     else res.json({success: true, msg: 'person edit insert success'});
                 });
@@ -207,7 +208,6 @@ router.post('/specification', function(req, res) {
                     if(err) res.send('SELECT error getting memberlist');
                     else {
                         if(rows[1][0].record == null){
-                            console.log(1);
                             res.json({success: true, result : JSON.parse(rows[0][0].result), record: JSON.parse(rows[1][0].record), next_intake: cal_nextintake(row[0].bed_time, row[0].wakeup_time, row[0].cycle), today_intake: today_intake});
                         }else{
                             for(var i=0; i<JSON.parse(rows[1][0].record).length; i++){
