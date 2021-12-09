@@ -164,7 +164,6 @@ function cal_nextintake(_bed_time, _wakeup_time, _cycle) {
 
     var bed_time = new Date(today.getFullYear()+"-"+(today.getMonth()+1)+"-"+today.getDate()+" "+_bed_time);
     var wakeup_time = new Date(today.getFullYear()+"-"+(today.getMonth()+1)+"-"+today.getDate()+" "+_wakeup_time);
-
     var waking_hour = (bed_time - wakeup_time) / 60000;
     var intake_howmanytimes = Math.floor(waking_hour / Number(_cycle)) + 1;
     var nexttime = wakeup_time;
@@ -204,7 +203,6 @@ router.post('/specification', function(req, res) {
     const utcNow = Now.getTime() + (Now.getTimezoneOffset() * 60 * 1000);
     const koreaTimeDiff = 9 * 60 * 60 * 1000;
     var today = new Date(utcNow + koreaTimeDiff).toISOString().slice(0,19).replace('T', ' ');
-    console.log(today);
 
     con.query(`SELECT * FROM member WHERE id= ${member_id};`, (err, row) => {
         if(err){
@@ -216,20 +214,23 @@ router.post('/specification', function(req, res) {
         else {
             if (row[0].member_type == 1){
                 var sql1 = `SELECT JSON_ARRAYAGG(JSON_OBJECT('nickname', nickname, 'member_type', member_type, 'weight', weight, 'wakeup_time', wakeup_time, 'bed_time', bed_time, 'temperature', temperature, 'intake_goal', intake_goal,'cycle', cycle,'intake_once', intake_once)) AS result FROM member WHERE id = ${member_id}; `;
-                var sql2 = `SELECT JSON_ARRAYAGG(JSON_OBJECT('date', date, 'actual_intake', actual_intake)) As record FROM record WHERE member_id = ${member_id} AND DATE(date) = Date('${today}');`;
+                var sql2 = `SELECT JSON_ARRAYAGG(JSON_OBJECT('date', DATE_FORMAT(date, "%H:%i"), 'actual_intake', actual_intake)) As record FROM record WHERE member_id = ${member_id} AND DATE(date) = Date('${today}');`;
                 var total_intake = 0;
                 var today_intake = 0;
                 con.query(sql1 + sql2, (err, rows) => {
                     if(err) res.send('SELECT error getting memberlist');
                     else {
                         if(rows[1][0].record == null){
-                            res.json({success: true, result : JSON.parse(rows[0][0].result), record: JSON.parse(rows[1][0].record), next_intake: cal_nextintake(row[0].bed_time, row[0].wakeup_time, row[0].cycle), today_intake: today_intake});
+                            res.json({success: true, result : JSON.parse(rows[0][0].result), record: JSON.parse(rows[1][0].record), next_intake: String(cal_nextintake(row[0].bed_time, row[0].wakeup_time, row[0].cycle)), today_intake: today_intake});
                         }else{
                             for(var i=0; i<JSON.parse(rows[1][0].record).length; i++){
                                 total_intake += JSON.parse(rows[1][0].record)[i].actual_intake;
                             }
+                            
+                            console.log(String(cal_nextintake(row[0].bed_time, row[0].wakeup_time, row[0].cycle)));
                             today_intake = Math.floor(total_intake / Number(JSON.parse(rows[0][0].result)[0].intake_goal) * 100);
-                            res.json({success: true, result : JSON.parse(rows[0][0].result), record: JSON.parse(rows[1][0].record), next_intake: cal_nextintake(row[0].bed_time, row[0].wakeup_time, row[0].cycle), today_intake: today_intake});
+                            //console.log(rows[1][0].record);
+                            res.json({success: true, result : JSON.parse(rows[0][0].result), record: JSON.parse(rows[1][0].record), next_intake: String(cal_nextintake(row[0].bed_time, row[0].wakeup_time, row[0].cycle)), today_intake: today_intake});
                         }
                     }
                 });
@@ -242,13 +243,13 @@ router.post('/specification', function(req, res) {
                     if(err) res.send(err);
                     else {
                         if(rows[1][0].record == null){
-                            res.json({success: true, result : JSON.parse(rows[0][0].result), record: JSON.parse(rows[1][0].record), next_intake: cal_nextintake(row[0].bed_time, row[0].wakeup_time, row[0].cycle), today_intake: today_intake});
+                            res.json({success: true, result : JSON.parse(rows[0][0].result), record: JSON.parse(rows[1][0].record), next_intake: String(cal_nextintake(row[0].bed_time, row[0].wakeup_time, row[0].cycle)), today_intake: today_intake});
                         }else{
                             for(var i=0; i<JSON.parse(rows[1][0].record).length; i++){
                                 total_intake += JSON.parse(rows[1][0].record)[i].actual_intake;
                             }
                             today_intake = Math.floor(total_intake / Number(JSON.parse(rows[0][0].result)[0].intake_goal) * 100);
-                            res.json({success: true, result : JSON.parse(rows[0][0].result), record: JSON.parse(rows[1][0].record), next_intake: cal_nextintake(row[0].bed_time, row[0].wakeup_time, row[0].cycle), today_intake: today_intake});
+                            res.json({success: true, result : JSON.parse(rows[0][0].result), record: JSON.parse(rows[1][0].record), next_intake: String(cal_nextintake(row[0].bed_time, row[0].wakeup_time, row[0].cycle)), today_intake: today_intake});
                         }
                     }
                 });
@@ -263,7 +264,7 @@ router.post('/specification', function(req, res) {
                     if(err) res.send(err);
                     else {
                         if(rows[2][0].record == null){
-                            res.json({success: true, result : JSON.parse(rows[0][0].result), record: JSON.parse(rows[1][0].record), next_intake: cal_nextintake_plant(row[0].last_supply_date, row[0].cycle), today_intake: today_intake});
+                            res.json({success: true, result : JSON.parse(rows[0][0].result), record: JSON.parse(rows[1][0].record), next_intake: String(cal_nextintake_plant(row[0].last_supply_date, row[0].cycle)), today_intake: today_intake});
                         }else{
                             for(var i=0; i<JSON.parse(rows[2][0].record).length; i++){
                                 total_intake += JSON.parse(rows[2][0].record)[i].actual_intake;
@@ -273,7 +274,7 @@ router.post('/specification', function(req, res) {
                             }else{
                                 today_intake = Math.floor(total_intake / Number(JSON.parse(rows[0][0].result)[0].intake_goal) * 100);
                             }
-                            res.json({success: true, result : JSON.parse(rows[0][0].result), record: JSON.parse(rows[1][0].record), next_intake: cal_nextintake_plant(row[0].last_supply_date, row[0].cycle), today_intake: today_intake});
+                            res.json({success: true, result : JSON.parse(rows[0][0].result), record: JSON.parse(rows[1][0].record), next_intake: String(cal_nextintake_plant(row[0].last_supply_date, row[0].cycle)), today_intake: today_intake});
                         }
                     }
                 });
